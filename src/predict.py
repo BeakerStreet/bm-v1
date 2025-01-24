@@ -1,7 +1,7 @@
 import logging
 import boto3
 import numpy as np
-from dataset import Dataset
+from src.dataset import Dataset
 from tensorflow.keras.models import load_model
 import sys
 
