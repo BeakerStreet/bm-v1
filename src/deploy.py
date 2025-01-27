@@ -12,13 +12,13 @@ class Deploy:
         self.bucket_name = os.getenv('MODEL_BUCKET_NAME')
         self.role = os.getenv('AWS_IAM_ROLE')
         self.framework_version = '2.18.0'
-        self.model_file = model_path
-        self.bucket_url = self.s3_upload()
-        self.url = self.deploy_model()
         self.instance_type = 'ml.m5.large'
         self.instance_count = 1
         self.region = os.getenv('SAGEMAKER_REGION')
-
+        self.model_file = model_path
+        self.bucket_url = self.s3_upload()
+        self.url = self.deploy_model()
+        
     def s3_upload(self):
         '''
         Uploads the model.keras file to the S3 bucket
