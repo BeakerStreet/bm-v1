@@ -62,7 +62,7 @@ def predict():
     logger.info("=== Predicting ===")
 
     # Load dataset
-    dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
+    dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
 
     # Initialize, upload, and deploy
     logger.info("Initializing deployment, uploading and deploying model")
