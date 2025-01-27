@@ -74,13 +74,16 @@ def deploy():
     src/deploy.py
     '''
 
+    logger = setup_logging()
+    logger.info("=== Deploying ===")  
+
     # Initialise, upload, and deploy a local model.keras file
     deployer = Deploy(model_path='model.keras')
+    logger.info(f"Model uploaded to S3: {deployer.bucket_url}")
     
-    
+    # Deploy the model to SageMaker
     deployer.deploy_model()
-    print(f"Model deployed at endpoint: {deployer.url}")
-
+    logger.info(f"Model deployed at endpoint: {deployer.url}")
 
 def predict():
     '''

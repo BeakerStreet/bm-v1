@@ -15,15 +15,23 @@ class Deploy:
         self.model_file = 'model.keras'
         self.bucket_url = self.s3_upload()
         self.url = self.deploy_model()
+        self.instance_type = 'ml.m5.large'
+        self.instance_count = 1
 
     def s3_upload(self):
+        '''
+        Uploads the model.keras file to the S3 bucket
+        '''
+        
         self.s3.upload_file(self.model_file, self.bucket_name, self.model_file)
         s3_url = f's3://{self.bucket_name}/{self.model_file}'
+        
         return s3_url
 
     def deploy_model(self):
-        logger = setup_logging()
-        logger.info("Creating SageMaker model and deploying endpoint")
+        '''
+        Deploys the model to SageMaker
+        '''
 
         sagemaker_session = sagemaker.Session()
         model = TensorFlowModel(
