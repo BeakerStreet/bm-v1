@@ -11,7 +11,7 @@ class Deploy:
         self.s3 = boto3.client('s3')
         self.bucket_name = os.getenv('MODEL_BUCKET_NAME')
         self.role = os.getenv('AWS_IAM_ROLE')
-        self.framework_version = '2.18.0'
+        self.framework_version = '2.16.0'
         self.instance_type = 'ml.m5.large'
         self.instance_count = 1
         self.region = os.getenv('SAGEMAKER_REGION')
