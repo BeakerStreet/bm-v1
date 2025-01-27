@@ -7,10 +7,14 @@ import sys
 import sagemaker
 from sagemaker.tensorflow import TensorFlowModel
 from src.deploy import Deploy
+from dotenv import load_dotenv
+import os
+
+load_dotenv(dotenv_path='.env')
 
 s3 = boto3.client('s3')
 
-def setup_logging():
+def setup_logging(): # do we want this? Or should it be in the deploy.py file?
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -18,13 +22,13 @@ def setup_logging():
     )
     return logging.getLogger(__name__)
 
-def upload_model_to_s3(model_file, bucket_name):
+def upload_model_to_s3(model_file, bucket_name): # move to deploy.py?
     logger = setup_logging()
     logger.info(f"Uploading {model_file} to S3 bucket {bucket_name}")
     s3.upload_file(model_file, bucket_name, model_file)
     logger.info("Upload complete")
 
-def deploy_model_to_sagemaker(bucket_name, model_file, role):
+def deploy_model_to_sagemaker(bucket_name, model_file, role): # move to deploy.py?
     logger = setup_logging()
     logger.info("Creating SageMaker model and deploying endpoint")
 
@@ -43,16 +47,9 @@ def deploy_model_to_sagemaker(bucket_name, model_file, role):
     logger.info("Deployment complete")
     return predictor
 
-def predict_with_sagemaker(predictor, image_data, text_data):
-    logger = setup_logging()
-    logger.info("Invoking SageMaker endpoint for prediction")
-    prediction = predictor.predict([image_data, text_data])
-    logger.info(f"Prediction: {prediction}")
-    return prediction
-
 def train():
     logger = setup_logging()
-    logger.info("=== Starting Train ===")
+    logger.info("=== Training ===")
 
     # Load the dataset
     dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
@@ -69,39 +66,52 @@ def train():
     # Save the model
     model.save('model.keras')
 
-    logger.info("=== Training Process Complete ===")
+    logger.info("=== Training Complete ===")
 
 def predict():
     logger = setup_logging()
-    logger.info("=== Starting Predict ===")
+    logger.info("=== Predicting ===")
+
+    MODEL_BUCKET_NAME = os.getenv('MODEL_BUCKET_NAME')
+    AWS_IAM_ROLE = os.getenv('AWS_IAM_ROLE')
 
     # Load the dataset for prediction
-    dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets/predict')
-
-    # Select a random image and its corresponding text embedding
-    random_index = np.random.randint(len(dataset.image_embeddings))
-    image_data = np.expand_dims(dataset.image_embeddings[random_index], axis=0)
-    text_data = np.expand_dims(dataset.text_embeddings[random_index], axis=0)
+    dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
 
     # Initialize Deploy class
-    bucket_name = 'your-s3-bucket-name'
-    role = 'your-sagemaker-execution-role'
-    deployer = Deploy(bucket_name, role)
+    deployer = Deploy(MODEL_BUCKET_NAME, AWS_IAM_ROLE)
 
     # Upload model to S3
-    model_file = 'model.keras'
-    deployer.upload_model_to_s3(model_file)
+    logger.info(f"Uploading {deployer.model_file} to S3 bucket {deployer.bucket_name}")
+    deployer.s3.upload_file(deployer.model_file, deployer.bucket_name, deployer.model_file)
+    logger.info("Upload complete")
 
     # Deploy model to SageMaker
-    predictor = deployer.deploy_model(model_file)
+    logger.info("Creating SageMaker model and deploying endpoint")
+    sagemaker_session = sagemaker.Session()
+    model = TensorFlowModel(
+        model_data=f's3://{deployer.bucket_name}/{deployer.model_file}',
+        role=deployer.role,
+        framework_version=deployer.framework_version,
+        sagemaker_session=sagemaker_session
+    )
+    predictor = model.deploy(
+        initial_instance_count=1,
+        instance_type='ml.m5.large'
+    )
+    logger.info("Deployment complete")
 
     # Make a prediction
-    prediction = predict_with_sagemaker(predictor, image_data, text_data)
+    logger.info("Invoking SageMaker endpoint for prediction")
+    prediction = predictor.predict([image_data, text_data])
+    logger.info(f"Prediction: {prediction}")
     
     print(prediction)
 
     # Clean up
-    deployer.delete_endpoint(predictor)
+    logger.info("Deleting SageMaker endpoint")
+    predictor.delete_endpoint()
+    logger.info("Endpoint deleted")
 
 def main():
     if len(sys.argv) < 2:
