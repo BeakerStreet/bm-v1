@@ -10,8 +10,9 @@ from tensorflow.keras.models import Model
 
 from src.deploy import Deploy
 from src.dataset import Dataset
+from src.predict import Predict
 
-def setup_logging(): # do we want this? Or should it be in the deploy.py file?
+def setup_logging(): 
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -58,29 +59,22 @@ def train():
     logger.info("=== Training Complete ===")
 
 def predict():
-    logger = setup_logging()
-    logger.info("=== Predicting ===")
-
-    # Load dataset
-    dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
-
-    # Initialize, upload, and deploy
-    logger.info("Initializing deployment, uploading and deploying model")
-    model = Deploy()
-
+    # Create an instance of the Predict class
+    predictor = Predict(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
     # Make a prediction
-    logger.info("Predicting")
-    prediction = model.url.predict([image_data, text_data])  # Adjust this line as needed
-    logger.info(f"Prediction: {prediction}")
-    
-    print(prediction)
+    predictor.make_prediction()
 
-    # Clean up
-    deployer.delete_endpoint(predictor)
+def deploy():
+    # Create an instance of the Deploy class
+    deployer = Deploy()
+    # Deploy the model
+    deployer.deploy_model()
+    print(f"Model deployed at endpoint: {deployer.url}")
+
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python predict.py <train|predict>")
+        print("Usage: python predict.py <train|predict|deploy>")
         sys.exit(1)
 
     command = sys.argv[1].lower()
@@ -89,8 +83,10 @@ def main():
         train()
     elif command == "predict":
         predict()
+    elif command == "deploy":
+        deploy()
     else:
-        print("Invalid command. Use 'train' or 'predict'.")
+        print("Invalid command. Use 'train' or 'predict' or 'deploy'.")
         sys.exit(1)
 
 if __name__ == "__main__":
