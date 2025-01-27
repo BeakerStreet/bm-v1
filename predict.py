@@ -5,6 +5,8 @@ from tensorflow.keras.models import load_model
 import sys
 import sagemaker
 from sagemaker.tensorflow import TensorFlowModel
+from tensorflow.keras.layers import Input, Dense, Concatenate
+from tensorflow.keras.models import Model
 
 from src.deploy import Deploy
 from src.dataset import Dataset
@@ -24,8 +26,25 @@ def train():
     # Load the dataset
     dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
 
-    # The model is already built and compiled in the Dataset class
-    model = dataset.model
+    # Build the model
+    input_shape_image = dataset.image_embeddings.shape[1:]  # Image embeddings input shape
+    input_shape_text = dataset.text_embeddings.shape[1:]  # Text input shape
+    num_classes = len(np.unique(dataset.labels))
+
+    # Define the image input
+    image_input = Input(shape=input_shape_image, name='image_input')
+    x = Dense(1024, activation='relu')(image_input)
+
+    # Define the text input
+    text_input = Input(shape=input_shape_text, name='text_input')
+    y = Dense(512, activation='relu')(text_input)
+
+    # Concatenate the outputs
+    combined = Concatenate()([x, y])
+    z = Dense(num_classes, activation='softmax')(combined)
+
+    # Create the model
+    model = Model(inputs=[image_input, text_input], outputs=z)
 
     # Compile the model
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
@@ -45,18 +64,13 @@ def predict():
     # Load dataset
     dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
 
-    # Initialize Deploy
-    deployer = Deploy()
-
-    # Upload model to S3 using Deploy class method
-    deployer.s3_upload()
-
-    # Deploy model to SageMaker using Deploy class method
-    predictor = deployer.deploy()
+    # Initialize, upload, and deploy
+    logger.info("Initializing deployment, uploading and deploying model")
+    model = Deploy()
 
     # Make a prediction
-    logger.info("Invoking SageMaker endpoint for prediction")
-    prediction = predictor.predict([image_data, text_data])
+    logger.info("Predicting")
+    prediction = model.url.predict([image_data, text_data])  # Adjust this line as needed
     logger.info(f"Prediction: {prediction}")
     
     print(prediction)

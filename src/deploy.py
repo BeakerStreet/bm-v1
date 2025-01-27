@@ -35,16 +35,18 @@ class Deploy:
         self.role = os.getenv('AWS_IAM_ROLE')
         self.framework_version = '2.18.0'
         self.model_file = 'model.keras'
-        self.s3_upload = self.s3_upload()
-        self.deploy_model = self.deploy_model()
+        self.bucket_url = self.s3_upload()
+        self.url = self.deploy_model()
 
     def s3_upload(self):
         self.s3.upload_file(self.model_file, self.bucket_name, self.model_file)
+        s3_url = f's3://{self.bucket_name}/{self.model_file}'
+        return s3_url
 
     def deploy_model(self):
         sagemaker_session = sagemaker.Session()
         model = TensorFlowModel(
-            model_data=f's3://{self.bucket_name}/{self.model_file}',
+            model_data=self.model_s3_url,  # Use the stored S3 URL
             role=self.role,
             framework_version=self.framework_version,
             sagemaker_session=sagemaker_session
@@ -53,7 +55,9 @@ class Deploy:
             initial_instance_count=1,
             instance_type='ml.m5.large'
         )
-        return predictor
+        # The endpoint name is used to construct the endpoint URL
+        endpoint_url = f"https://runtime.sagemaker.{sagemaker_session.boto_region_name}.amazonaws.com/endpoints/{predictor.endpoint_name}/invocations"
+        return endpoint_url
 
     def delete_endpoint(self, predictor):
         predictor.delete_endpoint()
