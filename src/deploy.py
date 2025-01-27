@@ -11,7 +11,7 @@ class Deploy:
         self.s3 = boto3.client('s3')
         self.bucket_name = os.getenv('MODEL_BUCKET_NAME')
         self.role = os.getenv('AWS_IAM_ROLE')
-        self.framework_version = '2.16.0'
+        self.framework_version = '2.16'
         self.instance_type = 'ml.m5.large'
         self.instance_count = 1
         self.region = os.getenv('SAGEMAKER_REGION')
@@ -21,11 +21,17 @@ class Deploy:
         
     def s3_upload(self):
         '''
-        Uploads the model.keras file to the S3 bucket
+        Converts model.keras file to tar.gz archive 
+        and uploads it to AWS S3 bucket
         '''
+
+        # Archive the model
+        model_archive = 'model.tar.gz'
+        os.system(f'tar -czvf {model_archive} {self.model_file}')
         
-        self.s3.upload_file(self.model_file, self.bucket_name, self.model_file)
-        s3_url = f's3://{self.bucket_name}/{self.model_file}'
+        # Upload
+        self.s3.upload_file(model_archive, self.bucket_name, model_archive)
+        s3_url = f's3://{self.bucket_name}/{model_archive}'
         
         return s3_url
 
