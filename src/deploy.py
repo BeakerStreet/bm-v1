@@ -7,12 +7,12 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path='.env')
 
 class Deploy:
-    def __init__(self):
+    def __init__(self, model_path):
         self.s3 = boto3.client('s3')
         self.bucket_name = os.getenv('MODEL_BUCKET_NAME')
         self.role = os.getenv('AWS_IAM_ROLE')
         self.framework_version = '2.18.0'
-        self.model_file = 'model.keras'
+        self.model_file = model_path
         self.bucket_url = self.s3_upload()
         self.url = self.deploy_model()
         self.instance_type = 'ml.m5.large'
