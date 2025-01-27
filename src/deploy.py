@@ -17,6 +17,7 @@ class Deploy:
         self.url = self.deploy_model()
         self.instance_type = 'ml.m5.large'
         self.instance_count = 1
+        self.region = os.getenv('SAGEMAKER_REGION')
 
     def s3_upload(self):
         '''
@@ -34,17 +35,18 @@ class Deploy:
         '''
 
         sagemaker_session = sagemaker.Session()
+
         model = TensorFlowModel(
-            model_data=self.bucket_url,  # Use the stored S3 URL
+            model_data=self.bucket_url,
             role=self.role,
             framework_version=self.framework_version,
             sagemaker_session=sagemaker_session
         )
         predictor = model.deploy(
-            initial_instance_count=1,
-            instance_type='ml.m5.large'
+            initial_instance_count=self.instance_count,
+            instance_type=self.instance_type
         )
-        logger.info("Deployment complete")
-        # The endpoint name is used to construct the endpoint URL
-        endpoint_url = f"https://runtime.sagemaker.{sagemaker_session.boto_region_name}.amazonaws.com/endpoints/{predictor.endpoint_name}/invocations"
+        
+        endpoint_url = f"https://runtime.sagemaker.{self.region}.amazonaws.com/endpoints/{predictor.endpoint_name}/invocations"
+        
         return endpoint_url
