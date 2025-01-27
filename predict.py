@@ -21,6 +21,14 @@ def setup_logging():
     return logging.getLogger(__name__)
 
 def train():
+    '''
+    Trains the model with a dataset hosted
+    locally in /data containing a dataset.json
+    text input file and images in data/assets 
+    utilising the Dataset class defined in 
+    src/dataset.py
+    '''
+
     logger = setup_logging()
     logger.info("=== Training ===")
 
@@ -58,19 +66,35 @@ def train():
 
     logger.info("=== Training Complete ===")
 
+def deploy():
+    '''
+    Uploaded a trained model to Amazon s3 
+    and then deploys to AWS SageMaker
+    utilising the Deploy class defined in
+    src/deploy.py
+    '''
+
+    # Initialise, upload, and deploy a local model.keras file
+    deployer = Deploy(model_path='model.keras')
+    
+    
+    deployer.deploy_model()
+    print(f"Model deployed at endpoint: {deployer.url}")
+
+
 def predict():
+    '''
+    Predicts one of a couple hundred 
+    predefined actions labels given a unique image 
+    and a generated text input
+    utilising the Predict class defined in
+    src/predict.py
+    '''
+
     # Create an instance of the Predict class
     predictor = Predict(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
     # Make a prediction
     predictor.make_prediction()
-
-def deploy():
-    # Create an instance of the Deploy class
-    deployer = Deploy()
-    # Deploy the model
-    deployer.deploy_model()
-    print(f"Model deployed at endpoint: {deployer.url}")
-
 
 def main():
     if len(sys.argv) < 2:
