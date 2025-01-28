@@ -126,11 +126,12 @@ def predict():
     labels = dataset.load_label_mappings(filepath='models/label_mappings.pkl')
 
     # Init Predict class
-    predictor = Predict(model_url='s3://path-to-your-model', image_input=image_embeddings, text_input=text_embeddings)
+    predictor = Predict(model_url=os.getenv('MODEL_URL'), image_input=image_embeddings, text_input=text_embeddings) # crude handling of single image and text input
 
-    # Make a prediction
-    prediction = dataset.make_prediction(image_embeddings, text_embeddings, labels)
-    print(f"Prediction: {prediction}")
+    # Make and decode prediction
+    prediction = predictor.make_prediction()
+    decoded_prediction = dataset.decode_labels(prediction)
+    print(f"Prediction: {decoded_prediction}")
 
 def main():
     if len(sys.argv) < 2:
