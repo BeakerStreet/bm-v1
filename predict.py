@@ -35,10 +35,19 @@ def train():
     # Load the dataset
     dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
 
+    # Load and process data
+    raw_data = dataset.load_raw_data()
+    raw_images_list = dataset.load_raw_images_list()
+    cleaned_data = dataset.clean_data()
+    cleaned_images_list = dataset.list_cleaned_images()
+    image_embeddings = dataset.load_and_embed_images()
+    text_embeddings = dataset.embed_text()
+    labels = dataset.label_actions()
+
     # Build the model
-    input_shape_image = dataset.image_embeddings.shape[1:]  # Image embeddings input shape
-    input_shape_text = dataset.text_embeddings.shape[1:]  # Text input shape
-    num_classes = len(np.unique(dataset.labels))
+    input_shape_image = image_embeddings.shape[1:]  # Image embeddings input shape
+    input_shape_text = text_embeddings.shape[1:]  # Text input shape
+    num_classes = len(np.unique(labels))
 
     # Define the image input
     image_input = Input(shape=input_shape_image, name='image_input')
@@ -59,7 +68,7 @@ def train():
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # Train the model
-    model.fit([dataset.image_embeddings, dataset.text_embeddings], dataset.labels, epochs=10, batch_size=32)
+    model.fit([image_embeddings, text_embeddings], labels, epochs=10, batch_size=32)
 
     # Save the model
     model.save('model.keras')

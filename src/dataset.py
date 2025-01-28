@@ -17,14 +17,7 @@ class Dataset:
     
     def __init__(self, dataset_path: str, image_folder: str = None) -> None:
         self.dataset_path = dataset_path
-        self.image_folder = image_folder
-        self.raw_data = self.load_raw_data()
-        self.raw_images_list = self.load_raw_images_list()
-        self.cleaned_data = self.clean_data()
-        self.cleaned_images_list = self.list_cleaned_images()
-        self.image_embeddings = self.load_and_embed_images()
-        self.text_embeddings = self.embed_text()
-        self.labels = self.label_actions()    
+        self.image_folder = image_folder 
 
     def load_raw_data(self):
         '''
