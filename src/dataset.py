@@ -18,6 +18,7 @@ class Dataset:
     def __init__(self, dataset_path: str, image_folder: str = None) -> None:
         self.dataset_path = dataset_path
         self.image_folder = image_folder 
+        self.action_labels = None  # Initialize action_labels attribute
 
     def load_raw_data(self):
         '''
@@ -27,7 +28,7 @@ class Dataset:
             data = json.load(f)
         return pd.DataFrame(data)
     
-    def load_raw_images_list(self):
+    def load_raw_images_list(self, raw_data: pd.DataFrame):
         '''
         Loads all image filenames from the image_folder
         (.jpg only)
@@ -39,7 +40,7 @@ class Dataset:
 
         return images_list
 
-    def clean_data(self):
+    def clean_data(self, raw_data: pd.DataFrame):
         '''
         Cleans the raw data, dropping some actions,
         protecting against null values, removing punctuation, 
@@ -181,5 +182,7 @@ class Dataset:
         label_encoder = LabelEncoder()
         action_labels = label_encoder.fit_transform(actions)
         
+        # Store the action labels in the instance variable
+        self.action_labels = action_labels
+        
         return action_labels
-    
