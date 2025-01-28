@@ -20,11 +20,11 @@ class Dataset:
         self.image_folder = image_folder 
         self.action_labels = None  # Initialize action_labels attribute
 
-    def load_raw_data(self):
+    def load_raw_data(self, dataset_path: str):
         '''
         Loads raw data from the dataset
         '''
-        with open(self.dataset_path, 'r') as f:
+        with open(dataset_path, 'r') as f:
             data = json.load(f)
         return pd.DataFrame(data)
     
@@ -36,7 +36,7 @@ class Dataset:
         if not self.image_folder:
             return []
 
-        images_list = self.raw_data['screenshot'].tolist()
+        images_list = raw_data['screenshot'].tolist()
 
         return images_list
 
@@ -46,7 +46,7 @@ class Dataset:
         protecting against null values, removing punctuation, 
         and handling missing turn data for image filenames.
         '''
-        df = pd.DataFrame(self.raw_data)
+        df = pd.DataFrame(raw_data)
 
         # Confirm valid "turn" value
         df['turn'] = df['turn'].apply(lambda x: x if isinstance(x, str) and x.strip() else None)
@@ -80,17 +80,17 @@ class Dataset:
 
         return df
 
-    def list_cleaned_images(self):
+    def list_cleaned_images(self, cleaned_data: pd.DataFrame):
         '''
         Lists all cleaned image filenames
         '''
 
-        images_list = self.cleaned_data['screenshot'].tolist()
+        images_list = cleaned_data['screenshot'].tolist()
         
         return images_list
 
 
-    def load_and_embed_images(self):
+    def load_and_embed_images(self, cleaned_data: pd.DataFrame):
         '''
         Loads and embeds images using ResNet50
         '''
@@ -98,11 +98,11 @@ class Dataset:
         model = self._load_images_model()
 
         # Preprocess all images at once to avoid creating tf.function in a loop
-        preprocessed_images = self._preprocess_images()
+        preprocessed_images = self._preprocess_images(self, cleaned_data)
         image_embeddings = self._embed_images(preprocessed_images, model)
         return image_embeddings
 
-    def _load_images_model(self):
+    def _load_images_model():
         '''
         Loads the ResNet model used in _embed_images
         '''
@@ -115,14 +115,14 @@ class Dataset:
 
         return model
 
-    def _preprocess_images(self) -> np.ndarray:
+    def _preprocess_images(self, cleaned_images_list: list) -> np.ndarray:
         '''
         Helper function to load and preprocess images for ResNet50 embedding
         '''
         preprocessed_images = []
         
         # Preprocess all images at once
-        image_paths = [os.path.join(self.image_folder, filename) for filename in self.cleaned_images_list]
+        image_paths = [os.path.join(self.image_folder, filename) for filename in cleaned_images_list]
         for image_path in image_paths:
             # Load image
             img = image.load_img(image_path, target_size=(224, 224))
@@ -152,7 +152,7 @@ class Dataset:
 
         return image_embeddings
 
-    def embed_text(self) -> np.ndarray:
+    def embed_text(self, cleaned_data: pd.DataFrame) -> np.ndarray:
         '''
         Embeds text using Keras TextVectorization
         '''
@@ -161,22 +161,22 @@ class Dataset:
         vectorizer = TextVectorization(output_mode='tf-idf')
         
         # Adapt the vectorizer to the text data
-        vectorizer.adapt(self.cleaned_data['game_state'].apply(lambda x: ' '.join(x)))
+        vectorizer.adapt(cleaned_data['game_state'].apply(lambda x: ' '.join(x)))
         
         # Transform the text data
-        text_embeddings = vectorizer(self.cleaned_data['game_state'].apply(lambda x: ' '.join(x)))
+        text_embeddings = vectorizer(cleaned_data['game_state'].apply(lambda x: ' '.join(x)))
         
         text_embeddings = text_embeddings.numpy()
         
         return text_embeddings
 
-    def label_actions(self) -> np.ndarray:
+    def label_actions(self, cleaned_data: pd.DataFrame) -> np.ndarray:
         '''
         Labels actions data
         '''
 
         # Assuming actions are categorical and need to be encoded
-        actions = self.cleaned_data['actions']
+        actions = cleaned_data['actions']
         
         # Convert actions to a numerical format, e.g., using LabelEncoder
         label_encoder = LabelEncoder()
