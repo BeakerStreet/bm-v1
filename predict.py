@@ -37,7 +37,7 @@ def train():
 
     # Load and process data
     raw_data = dataset.load_raw_data()
-    raw_images_list = dataset.load_raw_images_list(Dataset, raw_data)
+    raw_images_list = dataset.load_raw_images_list(raw_data)
     cleaned_data = dataset.clean_data(raw_data)
     cleaned_images_list = dataset.list_cleaned_images(cleaned_data)
     image_embeddings = dataset.load_and_embed_images(cleaned_images_list)

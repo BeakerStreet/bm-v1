@@ -102,11 +102,10 @@ class Dataset:
         image_embeddings = self._embed_images(preprocessed_images, model)
         return image_embeddings
 
-    def _load_images_model():
+    def _load_images_model(self):
         '''
         Loads the ResNet model used in _embed_images
         '''
-        
         # Load the ResNet50 model pre-trained on ImageNet
         base_model = ResNet50(weights='imagenet', include_top=False)
 
