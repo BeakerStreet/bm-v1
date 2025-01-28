@@ -20,11 +20,11 @@ class Dataset:
         self.image_folder = image_folder 
         self.action_labels = None  # Initialize action_labels attribute
 
-    def load_raw_data(self, dataset_path: str):
+    def load_raw_data(self):
         '''
         Loads raw data from the dataset
         '''
-        with open(dataset_path, 'r') as f:
+        with open(self.dataset_path, 'r') as f:
             data = json.load(f)
         return pd.DataFrame(data)
     
