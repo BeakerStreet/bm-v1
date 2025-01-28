@@ -112,6 +112,18 @@ def predict():
     # Init Dataset with the prediction input
     dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
 
+    # Load raw data
+    raw_data = dataset.load_raw_data()
+
+    # Clean the data
+    cleaned_data = dataset.clean_data(raw_data)
+
+    # List cleaned images
+    cleaned_images_list = dataset.list_cleaned_images(cleaned_data)
+
+    # Load and embed images
+    image_embeddings = dataset.load_and_embed_images(cleaned_images_list)
+
     # Load label encodings
     dataset.load_label_mappings('models/label_mappings.pkl')
 

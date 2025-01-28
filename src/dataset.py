@@ -11,8 +11,10 @@ from tensorflow.keras.layers import TextVectorization, Input, Dense, Concatenate
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import Model
 from sklearn.preprocessing import LabelEncoder
+import openai
+from dotenv import load_dotenv
 
-s3 = boto3.client('s3')
+load_dotenv(dotenv_path='.env')
 
 class Dataset:
     
@@ -207,3 +209,36 @@ class Dataset:
         Decodes labels using the label encoder
         '''
         return self.label_encoder.inverse_transform(labels)
+    
+    def generate_input_text(self, image_url: str) -> str:
+        '''
+        Generates input text for the model 
+        using ChatGPT, where text data is not
+        already present
+        '''
+
+        # Initialize OpenAI client
+        client = openai.OpenAI()
+
+        # Create a completion request with the image URL
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url,
+                            }
+                        },
+                    ],
+                }
+            ],
+        )
+
+        # Extract and return the message from the completion
+        return completion.choices[0].message
+    
