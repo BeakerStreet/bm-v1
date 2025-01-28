@@ -19,12 +19,11 @@ load_dotenv(dotenv_path='.env')
 
 class Dataset:
     
-    def __init__(self, dataset_path: str, image_folder: str = None, s3_bucket: str = None) -> None:
+    def __init__(self, dataset_path: str, s3_image_bucket: str = None) -> None:
         self.dataset_path = dataset_path
-        self.image_folder = image_folder 
-        self.s3_bucket = s3_bucket
-        self.action_labels = None  # Initialize action_labels attribute
         self.s3_client = boto3.client('s3')
+        self.s3_image_bucket = s3_image_bucket
+        self.action_labels = None
 
     def load_raw_data(self):
         '''
@@ -39,7 +38,7 @@ class Dataset:
         Loads all image filenames from the image_folder
         (.jpg only)
         '''
-        if not self.image_folder and not self.s3_bucket:
+        if not self.s3_image_bucket:
             return []
 
         images_list = raw_data['screenshot'].tolist()
@@ -86,9 +85,11 @@ class Dataset:
 
         return df
 
-    def list_cleaned_images(self, cleaned_data: pd.DataFrame):
+    def list_images(self, cleaned_data: pd.DataFrame):
         '''
-        Lists all cleaned image filenames
+        Lists all the image 
+        filenames from the cleaned 
+        data in text dataset
         '''
 
         images_list = cleaned_data['screenshot'].tolist()
@@ -127,14 +128,9 @@ class Dataset:
         preprocessed_images = []
         
         for filename in cleaned_images_list:
-            if self.s3_bucket:
-                # Load image from S3
-                obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=filename)
-                img = Image.open(BytesIO(obj['Body'].read()))
-            else:
-                # Load image from local directory
-                image_path = os.path.join(self.image_folder, filename)
-                img = image.load_img(image_path, target_size=(224, 224))
+            # Load image from S3
+            obj = self.s3_client.get_object(Bucket=self.s3_image_bucket, Key=filename)
+            img = Image.open(BytesIO(obj['Body'].read()))
             
             # Convert image to array
             img_array = image.img_to_array(img)

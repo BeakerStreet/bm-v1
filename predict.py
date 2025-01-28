@@ -7,10 +7,15 @@ import sagemaker
 from sagemaker.tensorflow import TensorFlowModel
 from tensorflow.keras.layers import Input, Dense, Concatenate
 from tensorflow.keras.models import Model
+from dotenv import load_dotenv
+import os
 
 from src.deployer import Deploy
 from src.dataset import Dataset
 from src.predicter import Predict
+
+# Load environment variables from .env file
+load_dotenv()
 
 def setup_logging(): 
     logging.basicConfig(
@@ -24,7 +29,7 @@ def train():
     '''
     Trains the model with a dataset hosted
     locally in /data containing a dataset.json
-    text input file and images in data/assets 
+    text input file and images stored in an S3 bucket
     utilising the Dataset class defined in 
     src/dataset.py
     '''
@@ -33,13 +38,13 @@ def train():
     logger.info("=== Training ===")
 
     # Load the dataset
-    dataset = Dataset(dataset_path='data/dataset.json', image_folder='data/assets')
+    dataset = Dataset(dataset_path='data/dataset.json', s3_image_bucket=os.getenv('S3_IMAGE_BUCKET'))
 
     # Load and process data
     raw_data = dataset.load_raw_data()
     raw_images_list = dataset.load_raw_images_list(raw_data)
     cleaned_data = dataset.clean_data(raw_data)
-    cleaned_images_list = dataset.list_cleaned_images(cleaned_data)
+    cleaned_images_list = dataset.list_images(cleaned_data)
     image_embeddings = dataset.load_and_embed_images(cleaned_images_list)
     text_embeddings = dataset.embed_text(cleaned_data)
     labels = dataset.label_actions(cleaned_data)
