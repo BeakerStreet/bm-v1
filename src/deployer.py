@@ -24,7 +24,7 @@ class Deploy:
         '''
 
         # Archive the model
-        model_archive = 'model.tar.gz'
+        model_archive = 'models/model.tar.gz'
         os.system(f'tar -czvf {model_archive} {self.model_file}')
         
         # Upload

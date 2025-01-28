@@ -44,6 +44,9 @@ def train():
     text_embeddings = dataset.embed_text(cleaned_data)
     labels = dataset.label_actions(cleaned_data)
 
+    # Save label encodings to file
+    dataset.save_label_mappings('models/label_mappings.pkl')
+
     # Build the model
     input_shape_image = image_embeddings.shape[1:]  # Image embeddings input shape
     input_shape_text = text_embeddings.shape[1:]  # Text input shape
@@ -71,7 +74,7 @@ def train():
     model.fit([image_embeddings, text_embeddings], labels, epochs=10, batch_size=32)
 
     # Save the model
-    model.save('model.keras')
+    model.save('models/model.keras')
 
     logger.info("=== Training Complete ===")
 
@@ -106,7 +109,7 @@ def predict():
     src/predict.py
     '''
 
-    # Initialize the Dataset class with the path to the dataset and image folder
+    # Init Dataset with the prediction input
     dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
 
     # Create an instance of the Predict class

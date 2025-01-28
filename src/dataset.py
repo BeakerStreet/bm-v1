@@ -3,6 +3,7 @@ from PIL import Image
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
 import json
+import joblib
 import numpy as np
 import pandas as pd
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
@@ -185,3 +186,16 @@ class Dataset:
         self.action_labels = action_labels
         
         return action_labels
+    
+    def save_label_mappings(self, filepath: str) -> None:
+        '''
+        Saves the label mappings to a file
+        '''
+        with open(filepath, 'wb') as f:
+            joblib.dump(self.label_encoder, f)
+
+    def decode_labels(self, labels: np.ndarray) -> np.ndarray:
+        '''
+        Decodes labels using the label encoder
+        '''
+        return self.label_encoder.inverse_transform(labels)
