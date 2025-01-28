@@ -112,6 +112,9 @@ def predict():
     # Init Dataset with the prediction input
     dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
 
+    # Load label encodings
+    dataset.load_label_mappings('models/label_mappings.pkl')
+
     # Create an instance of the Predict class
     predictor = Predict(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
     # Make a prediction

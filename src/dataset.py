@@ -189,10 +189,18 @@ class Dataset:
     
     def save_label_mappings(self, filepath: str) -> None:
         '''
-        Saves the label mappings to a file
+        Saves the label mappings to file
         '''
         with open(filepath, 'wb') as f:
             joblib.dump(self.label_encoder, f)
+
+    def load_label_mappings(self, filepath: str) -> None:
+        '''
+        Loads the label mappings from file
+        '''
+        with open(filepath, 'rb') as f:
+            self.label_encoder = joblib.load(f)
+        self.action_labels = self.label_encoder.transform(self.action_labels)
 
     def decode_labels(self, labels: np.ndarray) -> np.ndarray:
         '''
