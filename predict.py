@@ -116,11 +116,6 @@ def predict():
 
     # Init Dataset with the prediction input
     dataset = Dataset(s3_image_bucket=os.getenv('S3_PREDICTION_IMAGE_BUCKET'))
-
-    # Generate input text
-    dataset.generate_input_text(os.getenv('S3_PREDICTION_IMAGE_BUCKET'))
-    dataset.dataset_path = dataset.save_input_text('data/prediction_input.json')
-
     
 def main():
     if len(sys.argv) < 2:

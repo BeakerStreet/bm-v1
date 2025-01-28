@@ -20,12 +20,13 @@ load_dotenv(dotenv_path='.env')
 class Dataset:
     
     def __init__(self, dataset_path: str = None, s3_image_bucket: str = None) -> None:
+        self.s3_client = boto3.client('s3')
+        self.s3_image_bucket = s3_image_bucket
         if dataset_path:
             self.dataset_path = dataset_path
         else:
             self.dataset_path = self.create_and_save_input_text(s3_image_bucket)
-        self.s3_client = boto3.client('s3')
-        self.s3_image_bucket = s3_image_bucket
+
         self.action_labels = None
 
     def load_raw_data(self):
