@@ -38,14 +38,14 @@ def train():
     logger.info("=== Training ===")
 
     # Load the dataset
-    dataset = Dataset(dataset_path='data/dataset.json', s3_image_bucket=os.getenv('S3_IMAGE_BUCKET'))
+    dataset = Dataset(dataset_path='data/dataset.json', s3_image_bucket=os.getenv('S3_TRAINING_IMAGE_BUCKET'))
 
     # Load and process data
     raw_data = dataset.load_raw_data()
-    raw_images_list = dataset.load_raw_images_list(raw_data)
     cleaned_data = dataset.clean_data(raw_data)
     cleaned_images_list = dataset.list_images(cleaned_data)
     image_embeddings = dataset.load_and_embed_images(cleaned_images_list)
+    logger.info("Loaded and embedded images")
     text_embeddings = dataset.embed_text(cleaned_data)
     labels = dataset.label_actions(cleaned_data)
 
@@ -115,28 +115,13 @@ def predict():
     '''
 
     # Init Dataset with the prediction input
-    dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
+    dataset = Dataset(s3_image_bucket=os.getenv('S3_PREDICTION_IMAGE_BUCKET'))
 
-    # Load raw data
-    raw_data = dataset.load_raw_data()
+    # Generate input text
+    dataset.generate_input_text(os.getenv('S3_PREDICTION_IMAGE_BUCKET'))
+    dataset.dataset_path = dataset.save_input_text('data/prediction_input.json')
 
-    # Clean the data
-    cleaned_data = dataset.clean_data(raw_data)
-
-    # List cleaned images
-    cleaned_images_list = dataset.list_cleaned_images(cleaned_data)
-
-    # Load and embed images
-    image_embeddings = dataset.load_and_embed_images(cleaned_images_list)
-
-    # Load label encodings
-    dataset.load_label_mappings('models/label_mappings.pkl')
-
-    # Create an instance of the Predict class
-    predictor = Predict(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
-    # Make a prediction
-    predictor.make_prediction()
-
+    
 def main():
     if len(sys.argv) < 2:
         print("Usage: python predict.py <train|predict|deploy>")

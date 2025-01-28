@@ -19,31 +19,24 @@ load_dotenv(dotenv_path='.env')
 
 class Dataset:
     
-    def __init__(self, dataset_path: str, s3_image_bucket: str = None) -> None:
-        self.dataset_path = dataset_path
+    def __init__(self, dataset_path: str = None, s3_image_bucket: str = None) -> None:
+        if dataset_path:
+            self.dataset_path = dataset_path
+        else:
+            self.dataset_path = self.create_and_save_input_text(s3_image_bucket)
         self.s3_client = boto3.client('s3')
         self.s3_image_bucket = s3_image_bucket
         self.action_labels = None
 
     def load_raw_data(self):
         '''
-        Loads raw data from the dataset
+        Loads dataset.json text dataset
+        and returns it as a pandas 
+        DataFrame
         '''
         with open(self.dataset_path, 'r') as f:
             data = json.load(f)
         return pd.DataFrame(data)
-    
-    def load_raw_images_list(self, raw_data: pd.DataFrame):
-        '''
-        Loads all image filenames from the image_folder
-        (.jpg only)
-        '''
-        if not self.s3_image_bucket:
-            return []
-
-        images_list = raw_data['screenshot'].tolist()
-
-        return images_list
 
     def clean_data(self, raw_data: pd.DataFrame):
         '''
@@ -99,12 +92,15 @@ class Dataset:
 
     def load_and_embed_images(self, cleaned_images_list: list):
         '''
-        Loads and embeds images using ResNet50
+        Downloads, handles, and embeds 
+        images using ResNet50 and returns 
+        the embeddings as a numpy array
         '''
 
         model = self._load_images_model()
 
-        # Preprocess all images at once to avoid creating tf.function in a loop
+        
+        self._load_images_from_s3(cleaned_images_list)
         preprocessed_images = self._preprocess_images(cleaned_images_list)
         image_embeddings = self._embed_images(preprocessed_images, model)
         return image_embeddings
@@ -120,6 +116,21 @@ class Dataset:
         model = Model(inputs=base_model.input, outputs=base_model.output)
 
         return model
+    
+    def _load_images_from_s3(self, cleaned_images_list: list) -> np.ndarray:
+        '''
+        Downloads and loads images from S3
+        '''
+        preprocessed_images = []
+
+        # Ensure the 'assets' directory exists
+        os.makedirs('data/assets', exist_ok=True)
+
+        for filename in cleaned_images_list:
+            obj = self.s3_client.get_object(Bucket=self.s3_image_bucket, Key=filename)
+            with open(f'data/assets/{filename}', 'wb') as f:
+                f.write(obj['Body'].read())
+            img = Image.open(f'data/assets/{filename}')
 
     def _preprocess_images(self, cleaned_images_list: list) -> np.ndarray:
         '''
@@ -128,10 +139,8 @@ class Dataset:
         preprocessed_images = []
         
         for filename in cleaned_images_list:
-            # Load image from S3
-            obj = self.s3_client.get_object(Bucket=self.s3_image_bucket, Key=filename)
-            img = Image.open(BytesIO(obj['Body'].read()))
-            
+            # Load image from local /assets directory
+            img = Image.open(f'data/assets/{filename}')
             # Convert image to array
             img_array = image.img_to_array(img)
             # Expand dimensions to match the input shape of ResNet50
@@ -214,34 +223,59 @@ class Dataset:
         '''
         return self.label_encoder.inverse_transform(labels)
     
-    def generate_input_text(self, image_url: str) -> str:
+    def create_and_save_input_text(self, s3_bucket_name: str) -> list:
         '''
         Generates input text for the model 
         using ChatGPT, where text data is not
-        already present
+        already present, for images in an S3 bucket
         '''
 
         # Initialize OpenAI client
         client = openai.OpenAI()
 
-        # Create a completion request with the image URL
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")},
-                        {
+        # Prepare the system prompt
+        system_prompt = {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")}
+
+        # List all image objects in the specified S3 bucket
+        response = self.s3_client.list_objects_v2(Bucket=s3_bucket_name)
+        image_urls = [
+            f"https://{s3_bucket_name}.s3.amazonaws.com/{obj['Key']}"
+            for obj in response.get('Contents', [])
+            if obj['Key'].endswith('.jpg')
+        ]
+
+        # Initialize a list to store the generated texts
+        generated_texts = []
+
+        # Iterate over each image URL
+        for image_url in image_urls:
+            # Create a completion request with the image URL
+            completion = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    system_prompt,
+                    {
+                        "role": "user",
+                        "content": {
                             "type": "image_url",
                             "image_url": {
                                 "url": image_url,
                             }
                         },
-                    ],
-                }
-            ],
-        )
+                    }
+                ],
+            )
 
-        # Extract and return the message from the completion
-        return completion.choices[0].message
+            # Extract and append the message from the completion
+            generated_texts.append(completion.choices[0].message)
+
+        dataset_path = self._save_input_text(generated_texts)
+
+        return dataset_path
+    
+    def _save_input_text(self, generated_texts: list) -> None:
+        '''
+        Saves the generated texts to file
+        '''
+        with open('data/prediction_input.json', 'w') as f:
+            json.dump(generated_texts, f)
