@@ -8,7 +8,7 @@ from sagemaker.tensorflow import TensorFlowModel
 from tensorflow.keras.layers import Input, Dense, Concatenate
 from tensorflow.keras.models import Model
 
-from src.deploy import Deploy
+from deployer import Deploy
 from src.dataset import Dataset
 from src.predict import Predict
 
@@ -77,13 +77,16 @@ def deploy():
     logger = setup_logging()
     logger.info("=== Deploying ===")  
 
-    # Initialise, upload, and deploy a local model.keras file
+    # Initialise the Deploy class with the local model.keras file
     deployer = Deploy(model_path='model.keras')
-    logger.info(f"Model uploaded to S3: {deployer.bucket_url}")
+    
+    # Upload the model to S3
+    s3_url = deployer.s3_upload()
+    logger.info(f"Model uploaded to S3: {s3_url}")
     
     # Deploy the model to SageMaker
-    deployer.deploy_model()
-    logger.info(f"Model deployed at endpoint: {deployer.url}")
+    endpoint_url = deployer.deploy_model()
+    logger.info(f"Model deployed at endpoint: {endpoint_url}")
 
 def predict():
     '''

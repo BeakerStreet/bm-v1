@@ -1,6 +1,6 @@
 import numpy as np
 from tensorflow.keras.models import load_model
-from src.deploy import Deploy
+from deployer import Deploy
 from src.dataset import Dataset
 
 class Predict:

@@ -16,8 +16,6 @@ class Deploy:
         self.instance_count = 1
         self.region = os.getenv('SAGEMAKER_REGION')
         self.model_file = model_path
-        self.bucket_url = self.s3_upload()
-        self.url = self.deploy_model()
         
     def s3_upload(self):
         '''
