@@ -8,9 +8,9 @@ from sagemaker.tensorflow import TensorFlowModel
 from tensorflow.keras.layers import Input, Dense, Concatenate
 from tensorflow.keras.models import Model
 
-from deployer import Deploy
+from src.deployer import Deploy
 from src.dataset import Dataset
-from src.predict import Predict
+from src.predicter import Predict
 
 def setup_logging(): 
     logging.basicConfig(
