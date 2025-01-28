@@ -12,7 +12,7 @@ import os
 
 from src.deployer import Deploy
 from src.dataset import Dataset
-from src.predicter import Predict
+from predictor import Predict
 
 # Load environment variables from .env file
 load_dotenv()
@@ -116,7 +116,22 @@ def predict():
 
     # Init Dataset with the prediction input
     dataset = Dataset(s3_image_bucket=os.getenv('S3_PREDICTION_IMAGE_BUCKET'))
-    
+
+    # Load and process data
+    raw_data = dataset.load_raw_data()
+    cleaned_data = dataset.clean_data(raw_data)
+    cleaned_images_list = dataset.list_images(cleaned_data)
+    image_embeddings = dataset.load_and_embed_images(cleaned_images_list)
+    text_embeddings = dataset.embed_text(cleaned_data)
+    labels = dataset.load_label_mappings(filepath='models/label_mappings.pkl')
+
+    # Init Predict class
+    predictor = Predict(model_url='s3://path-to-your-model', image_input=image_embeddings, text_input=text_embeddings)
+
+    # Make a prediction
+    prediction = dataset.make_prediction(image_embeddings, text_embeddings, labels)
+    print(f"Prediction: {prediction}")
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python predict.py <train|predict|deploy>")
