@@ -97,6 +97,9 @@ def predict():
     src/predict.py
     '''
 
+    # Initialize the Dataset class with the path to the dataset and image folder
+    dataset = Dataset(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
+
     # Create an instance of the Predict class
     predictor = Predict(dataset_path='data/prediction_input.json', image_folder='data/assets/predict')
     # Make a prediction
