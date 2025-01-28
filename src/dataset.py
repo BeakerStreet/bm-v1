@@ -90,7 +90,7 @@ class Dataset:
         return images_list
 
 
-    def load_and_embed_images(self, cleaned_data: pd.DataFrame):
+    def load_and_embed_images(self, cleaned_images_list: list):
         '''
         Loads and embeds images using ResNet50
         '''
@@ -98,7 +98,7 @@ class Dataset:
         model = self._load_images_model()
 
         # Preprocess all images at once to avoid creating tf.function in a loop
-        preprocessed_images = self._preprocess_images(self, cleaned_data)
+        preprocessed_images = self._preprocess_images(cleaned_images_list)
         image_embeddings = self._embed_images(preprocessed_images, model)
         return image_embeddings
 
