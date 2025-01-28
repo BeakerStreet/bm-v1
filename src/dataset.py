@@ -247,15 +247,26 @@ class Dataset:
         # Iterate over each image URL
         for image_url in image_urls:
             # Create a completion request with the image URL
-            completion = client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")},
-                    {"role": "user", "content": image_url}
-                ]
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": os.getenv("CHATGPT_SYSTEM_PROMPT")},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_url,
+                                },
+                            },
+                        ],
+                    }
+                ],
+                max_tokens=300,
             )
             # Add the completion text to the generated_texts list
-            generated_texts.append(completion.choices[0].message['content'])
+            generated_texts.append(response.choices[0])
 
         dataset_path = self._save_input_text(generated_texts)
 
@@ -265,5 +276,6 @@ class Dataset:
         '''
         Saves the generated texts to file
         '''
+        content_only = [choice.message.content for choice in generated_texts]
         with open('data/prediction_input.json', 'w') as f:
-            json.dump(generated_texts, f)
+            json.dump(content_only, f)
