@@ -224,7 +224,7 @@ class Dataset:
         '''
         return self.label_encoder.inverse_transform(labels)
     
-    def create_and_save_input_text(self, s3_bucket_name: str) -> list:
+    def create_and_save_input_text(self, s3_bucket_name: str) -> str:
         '''
         Generates input text for the model 
         using ChatGPT, where text data is not
@@ -232,17 +232,13 @@ class Dataset:
         '''
 
         # Initialize OpenAI client
-        client = openai.OpenAI()
+        client = openai.Client(api_key=os.getenv('OPENAI_API_KEY'))
 
-        # Prepare the system prompt
-        system_prompt = {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")}
-
-        # List all image objects in the specified S3 bucket
+        # Fetch the list of image URLs from the S3 bucket
         response = self.s3_client.list_objects_v2(Bucket=s3_bucket_name)
         image_urls = [
             f"https://{s3_bucket_name}.s3.amazonaws.com/{obj['Key']}"
             for obj in response.get('Contents', [])
-            if obj['Key'].endswith('.jpg')
         ]
 
         # Initialize a list to store the generated texts
@@ -254,21 +250,12 @@ class Dataset:
             completion = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    system_prompt,
-                    {
-                        "role": "user",
-                        "content": {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_url,
-                            }
-                        },
-                    }
-                ],
+                    {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")},
+                    {"role": "user", "content": image_url}
+                ]
             )
-
-            # Extract and append the message from the completion
-            generated_texts.append(completion.choices[0].message)
+            # Add the completion text to the generated_texts list
+            generated_texts.append(completion.choices[0].message['content'])
 
         dataset_path = self._save_input_text(generated_texts)
 
