@@ -290,7 +290,6 @@ class Dataset:
                 response_format=game_state,
             )
         game_state = completion.choices[0].message.parsed
-        print(game_state)
 
         # Add the completion text to the generated_texts list
         text_inputs.append(
