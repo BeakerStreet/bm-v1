@@ -6,3 +6,4 @@ __pycache__/
 data/assets
 model.keras
 model.tar.gz
+prediction_input.json

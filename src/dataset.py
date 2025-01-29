@@ -11,7 +11,8 @@ from tensorflow.keras.layers import TextVectorization, Input, Dense, Concatenate
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import Model
 from sklearn.preprocessing import LabelEncoder
-import openai
+from pydantic import BaseModel
+from openai import OpenAI
 from dotenv import load_dotenv
 from io import BytesIO
 
@@ -239,7 +240,7 @@ class Dataset:
         '''
 
         # Initialize OpenAI client
-        client = openai.Client(api_key=os.getenv('OPENAI_API_KEY'))
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
         # Fetch the list of image URLs from the S3 bucket
         response = self.s3_client.list_objects_v2(Bucket=self.s3_image_bucket)
@@ -249,33 +250,59 @@ class Dataset:
         ]
 
         # Initialize a list to store the generated texts
-        generated_texts = []
+        text_inputs = []
+
+        class game_state(BaseModel):
+            turn: str 
+            science_per_turn: int
+            culture_per_turn: int
+            gold_per_turn: int
+            faith_per_turn: int
+            military_power: int
+            city_count: int
+            unit_count: int
+            units: list[str]
+            cities: list[str]
+            current_research: str
+            current_civic: str
+            era_score: int
 
         # Iterate over each image URL
         for image_url in image_urls:
             # Create a completion request with the image URL
-            response = client.chat.completions.create(
-                model="gpt-4o",
+            completion = client.beta.chat.completions.parse(
+                model="gpt-4o-2024-08-06",
                 messages=[
+                    {"role": "system", "content": os.getenv("CHATGPT_SYSTEM_PROMPT")},
                     {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": os.getenv("CHATGPT_SYSTEM_PROMPT")},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": image_url,
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": os.getenv("CHATGPT_SYSTEM_PROMPT")},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": image_url,
+                                    },
                                 },
-                            },
-                        ],
-                    }
+                            ],
+                        },
                 ],
-                max_tokens=300,
+                response_format=game_state,
             )
-            # Add the completion text to the generated_texts list
-            generated_texts.append(response.choices[0])
+        game_state = completion.choices[0].message.parsed
 
-        dataset_path = self._save_input_text(generated_texts)
+
+        # Add the completion text to the generated_texts list
+        text_inputs.append(
+            {
+                "turn": game_state.turn,
+                "actions": None,
+                "game_state": game_state,
+                "screenshot": None # really this should be the image filename but I can't be bothered
+            }
+        )
+
+        dataset_path = self._save_input_text(text_inputs)
 
         return dataset_path
     
@@ -283,8 +310,8 @@ class Dataset:
         '''
         Saves the generated texts to file
         '''
-        content_only = [choice.message.content for choice in generated_texts]
+        
         with open('data/prediction_input.json', 'w') as f:
-            json.dump(content_only, f)
+            json.dump(generated_texts, f)
         
         return 'data/prediction_input.json'
