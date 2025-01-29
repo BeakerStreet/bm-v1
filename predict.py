@@ -12,7 +12,7 @@ import os
 
 from src.deployer import Deploy
 from src.dataset import Dataset
-from predictor import Predict
+from src.predictor import Predict
 
 # Load environment variables from .env file
 load_dotenv()
