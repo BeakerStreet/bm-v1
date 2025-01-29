@@ -5,11 +5,14 @@ import os
 from dotenv import load_dotenv
 import shutil
 import tensorflow as tf
+from botocore.exceptions import ClientError
+from datetime import datetime
 load_dotenv(dotenv_path='.env')
 
 class Deploy:
     def __init__(self, model_path):
         self.s3 = boto3.client('s3')
+        self.sagemaker_client = boto3.client('sagemaker')
         self.bucket_name = os.getenv('MODEL_BUCKET_NAME')
         self.role = os.getenv('AWS_IAM_ROLE')
         self.framework_version = '2.16'
@@ -18,7 +21,8 @@ class Deploy:
         self.region = os.getenv('SAGEMAKER_REGION')
         self.model_file = model_path
         self.s3_url = None
-        self.endpoint_name = 'bm-v1'
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        self.endpoint_name = f'bm-v1-{timestamp}'
         
     def s3_upload(self):
         '''
@@ -62,6 +66,19 @@ class Deploy:
             framework_version=self.framework_version,
             sagemaker_session=sagemaker_session
         )
+
+        # Check if the endpoint configuration already exists
+        try:
+            self.sagemaker_client.describe_endpoint_config(EndpointConfigName=self.endpoint_name)
+            print(f"Endpoint configuration '{self.endpoint_name}' already exists.")
+            # Optionally, you can delete the existing configuration
+            # self.sagemaker_client.delete_endpoint_config(EndpointConfigName=self.endpoint_name)
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ValidationException':
+                print(f"Endpoint configuration '{self.endpoint_name}' does not exist. Creating a new one.")
+            else:
+                raise
+
         predictor = model.deploy(
             initial_instance_count=self.instance_count,
             instance_type=self.instance_type,
