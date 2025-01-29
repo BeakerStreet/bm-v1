@@ -26,7 +26,7 @@ class Deploy:
         and uploads to S3
         '''
 
-        # Convert the model to SavedModel format
+        # Define the directory and archive paths
         saved_model_dir = 'models/saved_model'
         model_archive = 'models/model.tar.gz'
 
@@ -34,9 +34,11 @@ class Deploy:
         if not os.path.exists(saved_model_dir):
             os.makedirs(saved_model_dir)
 
-        # Save keras model as SavedModel
+        # Load the Keras model
         model = tf.keras.models.load_model(self.model_file)
-        model.save(saved_model_dir)
+
+        # Save the model in TensorFlow SavedModel format
+        tf.saved_model.save(model, saved_model_dir)  # Use tf.saved_model.save
 
         # Create a tar.gz archive of the SavedModel directory
         shutil.make_archive('models/model', 'gztar', 'models', 'saved_model')

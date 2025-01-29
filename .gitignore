@@ -7,3 +7,4 @@ data/assets
 model.keras
 model.tar.gz
 prediction_input.json
+models/saved_model
