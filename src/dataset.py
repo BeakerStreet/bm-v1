@@ -290,15 +290,15 @@ class Dataset:
                 response_format=game_state,
             )
         game_state = completion.choices[0].message.parsed
-
+        print(game_state)
 
         # Add the completion text to the generated_texts list
         text_inputs.append(
             {
                 "turn": game_state.turn,
                 "actions": None,
-                "game_state": game_state,
-                "screenshot": None # really this should be the image filename but I can't be bothered
+                "game_state": game_state.dict(),
+                "screenshot": None
             }
         )
 
