@@ -35,7 +35,7 @@ class Deploy:
             os.makedirs(saved_model_dir)
 
         # Save keras model as SavedModel
-        model = tf.keras.model.load_model(self.model_file)
+        model = tf.keras.models.load_model(self.model_file)
         model.save(saved_model_dir)
 
         # Create a tar.gz archive of the SavedModel directory
