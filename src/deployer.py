@@ -3,7 +3,8 @@ import sagemaker
 from sagemaker.tensorflow import TensorFlowModel
 import os
 from dotenv import load_dotenv
-
+import shutil
+import tensorflow as tf
 load_dotenv(dotenv_path='.env')
 
 class Deploy:
@@ -21,17 +22,28 @@ class Deploy:
         
     def s3_upload(self):
         '''
-        Converts model.keras file to tar.gz archive 
-        and uploads it to AWS S3 bucket
+        Converts model to SavedModel format 
+        and uploads to S3
         '''
 
-        # Archive the model
+        # Convert the model to SavedModel format
+        saved_model_dir = 'models/saved_model'
         model_archive = 'models/model.tar.gz'
-        os.system(f'tar -czvf {model_archive} {self.model_file}')
-        
-        # Upload
-        self.s3.upload_file(model_archive, self.bucket_name, model_archive)
-        self.s3_url = f's3://{self.bucket_name}/{model_archive}'
+
+        # Create directory as needed
+        if not os.path.exists(saved_model_dir):
+            os.makedirs(saved_model_dir)
+
+        # Assuming the model is a Keras model, save it in SavedModel format
+        model = tf.keras.models.load_model(self.model_file)
+        model.save(saved_model_dir)
+
+        # Create a tar.gz archive of the SavedModel directory
+        shutil.make_archive('models/model', 'gztar', 'models', 'saved_model')
+
+        # Upload the archive to S3
+        self.s3.upload_file(model_archive, self.bucket_name, 'model/model.tar.gz')
+        self.s3_url = f's3://{self.bucket_name}/model/model.tar.gz'
         
         return self.s3_url
 
