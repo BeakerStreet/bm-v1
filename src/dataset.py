@@ -31,8 +31,8 @@ class Dataset:
 
     def load_raw_data(self):
         '''
-        Loads dataset.json text dataset
-        and returns it as a pandas 
+        Loads text dataset and 
+        returns it as a pandas 
         DataFrame
         '''
         with open(self.dataset_path, 'r') as f:
@@ -224,7 +224,7 @@ class Dataset:
         '''
         return self.label_encoder.inverse_transform(labels)
     
-    def create_and_save_input_text(self, s3_bucket_name: str) -> str:
+    def create_and_save_input_text(self) -> str:
         '''
         Generates input text for the model 
         using ChatGPT, where text data is not
@@ -235,9 +235,9 @@ class Dataset:
         client = openai.Client(api_key=os.getenv('OPENAI_API_KEY'))
 
         # Fetch the list of image URLs from the S3 bucket
-        response = self.s3_client.list_objects_v2(Bucket=s3_bucket_name)
+        response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket_name)
         image_urls = [
-            f"https://{s3_bucket_name}.s3.amazonaws.com/{obj['Key']}"
+            f"https://{self.s3_image_bucket}.s3.amazonaws.com/{obj['Key']}"
             for obj in response.get('Contents', [])
         ]
 

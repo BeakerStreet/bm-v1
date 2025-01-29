@@ -118,6 +118,7 @@ def predict():
     dataset = Dataset(s3_image_bucket=os.getenv('S3_PREDICTION_IMAGE_BUCKET'))
 
     # Load and process data
+    # Generate text data with the Dataset class
     raw_data = dataset.load_raw_data()
     cleaned_data = dataset.clean_data(raw_data)
     cleaned_images_list = dataset.list_images(cleaned_data)
