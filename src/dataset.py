@@ -25,7 +25,7 @@ class Dataset:
         if dataset_path:
             self.dataset_path = dataset_path
         else:
-            self.dataset_path = self.create_and_save_input_text(s3_image_bucket)
+            self.dataset_path = self.create_and_save_input_text()
 
         self.action_labels = None
 
