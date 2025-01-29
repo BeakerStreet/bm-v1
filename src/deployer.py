@@ -16,6 +16,8 @@ class Deploy:
         self.instance_count = 1
         self.region = os.getenv('SAGEMAKER_REGION')
         self.model_file = model_path
+        self.s3_url = None
+        self.endpoint_name = 'bm-v1'
         
     def s3_upload(self):
         '''
@@ -29,9 +31,9 @@ class Deploy:
         
         # Upload
         self.s3.upload_file(model_archive, self.bucket_name, model_archive)
-        s3_url = f's3://{self.bucket_name}/{model_archive}'
+        self.s3_url = f's3://{self.bucket_name}/{model_archive}'
         
-        return s3_url
+        return self.s3_url
 
     def deploy_model(self):
         '''
@@ -41,14 +43,15 @@ class Deploy:
         sagemaker_session = sagemaker.Session()
 
         model = TensorFlowModel(
-            model_data=self.bucket_name,
+            model_data=self.s3_url,
             role=self.role,
             framework_version=self.framework_version,
             sagemaker_session=sagemaker_session
         )
         predictor = model.deploy(
             initial_instance_count=self.instance_count,
-            instance_type=self.instance_type
+            instance_type=self.instance_type,
+            endpoint_name=self.endpoint_name
         )
         
         endpoint_url = f"https://runtime.sagemaker.{self.region}.amazonaws.com/endpoints/{predictor.endpoint_name}/invocations"
