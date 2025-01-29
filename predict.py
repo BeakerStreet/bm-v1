@@ -95,7 +95,7 @@ def deploy():
     logger.info("=== Deploying ===")  
 
     # Initialise the Deploy class with the local model.keras file
-    deployer = Deploy(model_path='model.keras')
+    deployer = Deploy(model_path='models/model.keras')
     
     # Upload the model to S3
     s3_url = deployer.s3_upload()
