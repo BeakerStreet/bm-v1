@@ -22,13 +22,9 @@ class Dataset:
     def __init__(self, dataset_path: str = None, s3_image_bucket: str = None) -> None:
         self.s3_client = boto3.client('s3')
         self.s3_image_bucket = s3_image_bucket
-        if dataset_path:
-            self.dataset_path = dataset_path
-        else:
-            self.dataset_path = self.create_and_save_input_text()
-
+        self.dataset_path = self.create_and_save_input_text() if dataset_path is None else dataset_path
         self.action_labels = None
-        print(f"Dataset values: {self.s3_client}, {self.s3_image_bucket}, {self.dataset_path}")
+        print(f"Dataset path value: {self.dataset_path}")
 
     def load_raw_data(self):
         '''
@@ -282,3 +278,5 @@ class Dataset:
         content_only = [choice.message.content for choice in generated_texts]
         with open('data/prediction_input.json', 'w') as f:
             json.dump(content_only, f)
+        
+        return 'data/prediction_input.json'
