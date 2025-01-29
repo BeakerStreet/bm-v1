@@ -41,7 +41,7 @@ class Deploy:
         sagemaker_session = sagemaker.Session()
 
         model = TensorFlowModel(
-            model_data=self.bucket_url,
+            model_data=self.bucket_name,
             role=self.role,
             framework_version=self.framework_version,
             sagemaker_session=sagemaker_session
