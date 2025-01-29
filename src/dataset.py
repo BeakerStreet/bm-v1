@@ -28,6 +28,7 @@ class Dataset:
             self.dataset_path = self.create_and_save_input_text()
 
         self.action_labels = None
+        print(f"Dataset values: {self.s3_client}, {self.s3_image_bucket}, {self.dataset_path}")
 
     def load_raw_data(self):
         '''
@@ -235,7 +236,7 @@ class Dataset:
         client = openai.Client(api_key=os.getenv('OPENAI_API_KEY'))
 
         # Fetch the list of image URLs from the S3 bucket
-        response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket_name)
+        response = self.s3_client.list_objects_v2(Bucket=self.s3_image_bucket)
         image_urls = [
             f"https://{self.s3_image_bucket}.s3.amazonaws.com/{obj['Key']}"
             for obj in response.get('Contents', [])
@@ -270,6 +271,8 @@ class Dataset:
 
         dataset_path = self._save_input_text(generated_texts)
 
+        print(f"Generated dataset saved to {dataset_path}:")
+        print(f"{generated_texts}")
         return dataset_path
     
     def _save_input_text(self, generated_texts: list) -> None:
