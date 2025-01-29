@@ -120,10 +120,9 @@ def predict():
     # Load and process data
     # Generate text data with the Dataset class
     raw_data = dataset.load_raw_data()
-    cleaned_data = dataset.clean_data(raw_data)
-    cleaned_images_list = dataset.list_images(cleaned_data)
-    image_embeddings = dataset.load_and_embed_images(cleaned_images_list)
-    text_embeddings = dataset.embed_text(cleaned_data)
+    images_list = dataset.list_images_from_s3()
+    image_embeddings = dataset.load_and_embed_images(images_list)
+    text_embeddings = dataset.embed_text(raw_data)
     labels = dataset.load_label_mappings(filepath='models/label_mappings.pkl')
 
     # Init Predict class

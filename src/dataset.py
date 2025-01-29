@@ -24,7 +24,6 @@ class Dataset:
         self.s3_image_bucket = s3_image_bucket
         self.dataset_path = self.create_and_save_input_text() if dataset_path is None else dataset_path
         self.action_labels = None
-        print(f"Dataset path value: {self.dataset_path}")
 
     def load_raw_data(self):
         '''
@@ -84,6 +83,17 @@ class Dataset:
         '''
 
         images_list = cleaned_data['screenshot'].tolist()
+        
+        return images_list
+    
+    def list_images_from_s3(self):
+        '''
+        Lists all the image 
+        filenames from the S3 bucket
+        '''
+
+        response = self.s3_client.list_objects_v2(Bucket=self.s3_image_bucket)
+        images_list = [obj['Key'] for obj in response.get('Contents', [])]
         
         return images_list
 
@@ -267,8 +277,6 @@ class Dataset:
 
         dataset_path = self._save_input_text(generated_texts)
 
-        print(f"Generated dataset saved to {dataset_path}:")
-        print(f"{generated_texts}")
         return dataset_path
     
     def _save_input_text(self, generated_texts: list) -> None:
